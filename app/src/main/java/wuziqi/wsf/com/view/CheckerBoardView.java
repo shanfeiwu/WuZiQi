@@ -1,20 +1,25 @@
 package wuziqi.wsf.com.view;
 
 import android.content.Context;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Point;
+import android.os.Parcel;
+import android.os.Parcelable;
 import android.support.annotation.Nullable;
-import android.telephony.CarrierConfigManager;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.Toast;
 
 import java.util.ArrayList;
+import java.util.List;
 
+import wuziqi.wsf.com.MainActivity;
 import wuziqi.wsf.com.R;
 
 
@@ -31,10 +36,6 @@ public class CheckerBoardView extends View {
     private boolean mIsWhite;
     private ArrayList<Point> mArrayWhite = new ArrayList<>();
     private ArrayList<Point> mArrayBlack = new ArrayList<>();
-
-    private boolean mWhiteIsWinner;
-    private boolean mGameOver;
-    private static int WIN_COUNT=5;
 
 
     public CheckerBoardView(Context context, @Nullable AttributeSet attrs) {
@@ -87,8 +88,6 @@ public class CheckerBoardView extends View {
         onDrawCheckerBoard(canvas);
         onDrawFlag(canvas);
         clearAnimation();
-        View view = null;
-        view.getVisibility();
     }
 
     private void onDrawFlag(Canvas canvas) {
@@ -109,16 +108,12 @@ public class CheckerBoardView extends View {
         }
     }
 
+
+
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         int action = event.getAction();
         if(action==MotionEvent.ACTION_UP){
-            try {
-                Log.i(TAG,"testCarrierServicesIsTheDefaultImsPackage");
-                testCarrierServicesIsTheDefaultImsPackage();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
             int x = (int) event.getX();
             int y = (int) event.getY();
             Point p = getValidPoint(x,y);
@@ -128,48 +123,101 @@ public class CheckerBoardView extends View {
             if(mIsWhite){
                 mArrayWhite.add(p);
                 checkGameOver(mArrayWhite,p);
-                mIsWhite = false;
             }else {
                 mArrayBlack.add(p);
                 checkGameOver(mArrayBlack,p);
-                mIsWhite = true;
             }
             invalidate();
         }
         return true;
     }
 
+    /*
+    *
+    *
+    * */
     private void checkGameOver(ArrayList<Point> arrayPoint,Point p) {
-        boolean leftBreak = false;
-        boolean rightBreak = false;
-        int count = 1;
-        int caseWinMode = 0;//max == 3
+        boolean leftBreak ;
+        boolean rightBreak ;
+        int count ;
         final int  horizental = 0;
         final int vertical = 1;
         final int leftSkew = 2;
         final int rightSkew = 3;
         for(int i=0;i<4;i++){
-           for(Point leftPoint=p,rightPoint=p;count<5&&(leftBreak&&rightBreak);){
+            leftBreak = false;
+            rightBreak = false;
+            count = 0;
+            for(Point leftPoint=p,rightPoint=p;count<4;){
                switch (i){
                    case horizental:
-                       leftPoint = new Point(leftPoint.x-1,leftPoint.y);
-                       rightPoint = new Point(rightPoint.x+1,rightPoint.y);
+                       if(!leftBreak){
+                           leftPoint = new Point(leftPoint.x-1,leftPoint.y);
+                           leftBreak = !arrayPoint.contains(leftPoint);
+                           count = !leftBreak ? count+1:count;
+                       }
+                        if(!rightBreak){
+                            rightPoint = new Point(rightPoint.x+1,rightPoint.y);
+                            rightBreak = !arrayPoint.contains(rightPoint);
+                            count = !rightBreak ? count+1:count;
+                        }
                        break;
                    case vertical:
-                       leftPoint = new Point(leftPoint.x,leftPoint.y-1);
-                       rightPoint = new Point(rightPoint.x,rightPoint.y+1);
+                       if(!leftBreak){
+                           leftPoint = new Point(leftPoint.x,leftPoint.y-1);
+                           leftBreak = !arrayPoint.contains(leftPoint);
+                           count = !leftBreak ? count+1:count;
+                       }
+                       if(!rightBreak){
+                           rightPoint = new Point(rightPoint.x,rightPoint.y+1);
+                           rightBreak = !arrayPoint.contains(rightPoint);
+                           count = !rightBreak ? count+1:count;
+                       }
                        break;
                    case leftSkew:
-                       leftPoint = new Point(leftPoint.x-1,leftPoint.y-1);
-                       rightPoint = new Point(rightPoint.x+1,rightPoint.y+1);
+                       if(!leftBreak){
+                           leftPoint = new Point(leftPoint.x-1,leftPoint.y-1);
+                           leftBreak = !arrayPoint.contains(leftPoint);
+                           count = !leftBreak ? count+1:count;
+                       }
+                       if(!rightBreak){
+                           rightPoint = new Point(rightPoint.x+1,rightPoint.y+1);
+                           rightBreak = !arrayPoint.contains(rightPoint);
+                           count = !rightBreak ? count+1:count;
+                       }
                        break;
                    case rightSkew:
-                       leftPoint = new Point(leftPoint.x-1,leftPoint.y+1);
-                       rightPoint = new Point(rightPoint.x+1,rightPoint.y-1);
+                       if(!leftBreak){
+                           leftPoint = new Point(leftPoint.x-1,leftPoint.y+1);
+                           leftBreak = !arrayPoint.contains(leftPoint);
+                           count = !leftBreak ? count+1:count;
+                       }
+                       if(!rightBreak){
+                           rightPoint = new Point(rightPoint.x+1,rightPoint.y-1);
+                           rightBreak = !arrayPoint.contains(rightPoint);
+                           count = !rightBreak ? count+1:count;
+                       }
                        break;
+               }
+               if(leftBreak && rightBreak){
+                   count=5;
+                   break;
+               }
+               if(count==4){
+                   mArrayBlack.clear();
+                   mArrayWhite.clear();
+                   if(mIsWhite){
+                       Toast.makeText(getContext(), "白棋胜利", Toast.LENGTH_SHORT).show();
+                   }else{
+                       Toast.makeText(getContext(),"黑棋胜利",Toast.LENGTH_SHORT).show();
+                   }
+                   i=4;
+                   mIsWhite = false;
+                   break;
                }
            }
         }
+        mIsWhite=!mIsWhite;
     }
 
     private Point getValidPoint(int x, int y) {
@@ -177,29 +225,67 @@ public class CheckerBoardView extends View {
         return p;
     }
 
-    public void testCarrierServicesIsTheDefaultImsPackage()
-            throws Exception
-    {
-        if (true)
-        {
-            Object localObject = (CarrierConfigManager)getContext().getSystemService("carrier_config");
-            boolean bool2 = false;
-            boolean bool1;
-            if (localObject != null) {
-                bool1 = true;
-            } else {
-                bool1 = false;
-            }
-            Log.i(TAG,"Could not get the carrier config manager."+bool1);
-            localObject = ((CarrierConfigManager)localObject).getConfig().getString("config_ims_package_override_string");
-            Log.i(TAG,(localObject==null)+"");
-            if ((localObject != null) && (((String)localObject).equals("com.google.android.ims"))) {
-                bool1 = true;
-            } else {
-                bool1 = bool2;
-            }
-            Log.i(TAG,"CS not the default IMS package: "+bool1);
+    @Override
+    protected void onRestoreInstanceState(Parcelable state) {
+        super.onRestoreInstanceState(state);
+        MyArraylistParcel myArraylistParcel = (MyArraylistParcel) state;
+        mArrayBlack = (ArrayList<Point>) myArraylistParcel.blackArraylist;
+        mArrayWhite = (ArrayList<Point>) myArraylistParcel.whiteArraylist;
+        requestLayout();
+    }
+
+    @Nullable
+    @Override
+    protected Parcelable onSaveInstanceState() {
+        Parcelable parcelable = super.onSaveInstanceState();
+        MyArraylistParcel myArraylistParcel = new MyArraylistParcel(parcelable);
+        myArraylistParcel.whiteArraylist = mArrayWhite;
+        myArraylistParcel.blackArraylist = mArrayBlack;
+        return myArraylistParcel;
+    }
+
+    static class MyArraylistParcel extends BaseSavedState {
+        List<Point> whiteArraylist = null;
+        List<Point> blackArraylist = null;
+
+        public MyArraylistParcel(Parcelable parcelable){
+            super(parcelable);
         }
+
+        protected MyArraylistParcel(Parcel in) {
+            super(in);
+            if(whiteArraylist==null){
+                whiteArraylist = new ArrayList<>();
+            }
+            if(blackArraylist == null){
+                blackArraylist = new ArrayList<>();
+            }
+            in.readTypedList(whiteArraylist,Point.CREATOR);
+            in.readTypedList(blackArraylist,Point.CREATOR);
+        }
+
+        @Override
+        public void writeToParcel(Parcel dest, int flags) {
+            dest.writeTypedList(whiteArraylist);
+            dest.writeTypedList(blackArraylist);
+        }
+
+        @Override
+        public int describeContents() {
+            return 0;
+        }
+
+        public static final Creator<MyArraylistParcel> CREATOR = new Creator<MyArraylistParcel>() {
+            @Override
+            public MyArraylistParcel createFromParcel(Parcel in) {
+                return new MyArraylistParcel(in);
+            }
+
+            @Override
+            public MyArraylistParcel[] newArray(int size) {
+                return new MyArraylistParcel[size];
+            }
+        };
     }
 
 }

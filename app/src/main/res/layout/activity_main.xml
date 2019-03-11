@@ -7,6 +7,7 @@
     tools:context=".MainActivity">
 
     <wuziqi.wsf.com.view.CheckerBoardView
+        android:id="@+id/checker_borad_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_gravity="center"
